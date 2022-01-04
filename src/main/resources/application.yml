@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8080
 spring:
   application:
     name: shiro-rbac-system
@@ -13,9 +13,9 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     ####   请修改为自己的数据库
-    url: jdbc:mysql://localhost:3306/yourdatabase?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf-8&useSSL=true
-    username: yourname
-    password: yourpass
+    url: jdbc:mysql://localhost:3306/shiro_rbac_system?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf-8&useSSL=true
+    username: root
+    password: 123456
   jpa:
     #    show-sql: true
     hibernate:
