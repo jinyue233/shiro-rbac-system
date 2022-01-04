@@ -2,6 +2,7 @@ package name.ealen.infrastructure.config;
 
 import name.ealen.domain.dao.PermissionRepository;
 import name.ealen.domain.entity.Permission;
+import name.ealen.infrastructure.filters.SimpleCORSFilter;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
@@ -9,8 +10,9 @@ import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import javax.servlet.Filter;
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +39,16 @@ public class ShiroConfig {
         factoryBean.setLoginUrl("/login");//登录页
         factoryBean.setSuccessUrl("/index");//首页
         factoryBean.setUnauthorizedUrl("/unauthorized");//未授权界面
+        Map<String, Filter> filterMap = new HashMap<>();
+        filterMap.put("cors", simpleCORSFilter());
         factoryBean.setFilterChainDefinitionMap(setFilterChainDefinitionMap()); //配置 拦截过滤器链
+
         return factoryBean;
+    }
+
+    @Bean
+    public SimpleCORSFilter simpleCORSFilter() {
+        return new SimpleCORSFilter();
     }
 
     /**
@@ -77,10 +87,12 @@ public class ShiroConfig {
         for (Permission p : allPermission) {
             filterMap.put(p.getUrl(), "perms[" + p.getName() + "]");    //拦截器中注册所有的权限
         }
+
         filterMap.put("/static/**", "anon");    //公开访问的资源
         filterMap.put("/open/api/**", "anon");  //公开接口地址
         filterMap.put("/logout", "logout");     //配置登出页,shiro已经帮我们实现了跳转
         filterMap.put("/**", "authc");          //所有资源都需要经过验证
+        // filterMap.put("/**", "cors");
         return filterMap;
     }
 

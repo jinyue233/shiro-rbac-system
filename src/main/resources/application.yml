@@ -1,5 +1,6 @@
+
 server:
-  port: 8080
+  port: 8088
 spring:
   application:
     name: shiro-rbac-system
@@ -17,7 +18,7 @@ spring:
     username: root
     password: 123456
   jpa:
-    #    show-sql: true
+    show-sql: true
     hibernate:
       ddl-auto: none
     open-in-view: false # 禁用 OSIV <Spring Boot中默认启用了OSIV(Open Session in View)>
@@ -25,3 +26,4 @@ spring:
     encoding:
       charset: utf-8
       enabled: true
+debug: true

@@ -24,15 +24,19 @@ public class LoginApiFacade {
      * @param params 包含必传信息 用户名 密码
      */
     @PostMapping(value = "/open/api/login")
-    public ResponseEntity<Resp> login(@RequestBody Map<String, String> params) {
-        if (params.containsKey("username") && params.containsKey("password")) {
+    public ResponseEntity<Resp> login(/*@RequestBody Map<String, String> params*/ String username, String password) {
+        /*if (params.containsKey("username") && params.containsKey("password")) {
             String username = params.get("username");
             String password = params.get("password");
             return userLoginApiService.login(username, password);
         } else {
             return ResponseEntity.badRequest().body(new Resp("缺少重要参数或参数无效"));
 
+        }*/
+        if (username == null || password == null) {
+            return ResponseEntity.badRequest().body(new Resp("缺少重要参数或参数无效"));
         }
+        return userLoginApiService.login(username, password);
     }
 
     /**
