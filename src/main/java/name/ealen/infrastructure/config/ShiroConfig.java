@@ -39,7 +39,8 @@ public class ShiroConfig {
         factoryBean.setLoginUrl("/login");//登录页
         factoryBean.setSuccessUrl("/index");//首页
         factoryBean.setUnauthorizedUrl("/unauthorized");//未授权界面
-        Map<String, Filter> filterMap = new HashMap<>();
+        // 添加自定义过滤器
+        Map<String, Filter> filterMap = factoryBean.getFilters();
         filterMap.put("cors", simpleCORSFilter());
         factoryBean.setFilterChainDefinitionMap(setFilterChainDefinitionMap()); //配置 拦截过滤器链
 
@@ -91,8 +92,7 @@ public class ShiroConfig {
         filterMap.put("/static/**", "anon");    //公开访问的资源
         filterMap.put("/open/api/**", "anon");  //公开接口地址
         filterMap.put("/logout", "logout");     //配置登出页,shiro已经帮我们实现了跳转
-        filterMap.put("/**", "authc");          //所有资源都需要经过验证
-        // filterMap.put("/**", "cors");
+        filterMap.put("/**", "authc,cors");          //所有资源都需要经过验证
         return filterMap;
     }
 
