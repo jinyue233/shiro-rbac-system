@@ -3,11 +3,13 @@ package name.ealen.infrastructure.config;
 import name.ealen.domain.dao.PermissionRepository;
 import name.ealen.domain.entity.Permission;
 import name.ealen.infrastructure.filters.CustomFormAuthenticationFilter;
+import name.ealen.infrastructure.filters.JwtFilter;
 import name.ealen.infrastructure.filters.SimpleCORSFilter;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.mgt.DefaultSessionStorageEvaluator;
 import org.apache.shiro.mgt.DefaultSubjectDAO;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.realm.Realm;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
@@ -16,14 +18,12 @@ import org.apache.shiro.web.mgt.DefaultWebSessionStorageEvaluator;
 import org.apache.shiro.web.servlet.SimpleCookie;
 import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import org.apache.shiro.web.session.mgt.ServletContainerSessionManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import javax.servlet.Filter;
 import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 // saveRequestAndRedirectToLogin作用：当检测到用户没有登录但要访问受限资源时，此时过经过FormAuthenticationFilter、
 // UserFilter或PermissionsAuthorizationFilter等过滤器时，此时会默认创建session，然后将访问受限资源的请求url保存到
 // session中，等用户登录后，然后再调用FormAuthenticationFilter（如用到）的issueSuccessRedirect(request, response)方法取出
@@ -43,6 +43,9 @@ public class ShiroConfig {
     @Resource
     private UserAuthRealm userAuthRealm;
 
+    @Autowired
+    private TokenRealm tokenRealm;
+
     /**
      * 配置 资源访问策略 . web应用程序 shiro核心过滤器配置
      */
@@ -57,6 +60,7 @@ public class ShiroConfig {
         Map<String, Filter> filterMap = factoryBean.getFilters();
         filterMap.put("cors", simpleCORSFilter());//
         filterMap.put("authc", new CustomFormAuthenticationFilter());
+        filterMap.put("jwt", new JwtFilter());
         factoryBean.setFilterChainDefinitionMap(setFilterChainDefinitionMap()); //配置 拦截过滤器链
 
         return factoryBean;
@@ -79,8 +83,14 @@ public class ShiroConfig {
         DefaultSubjectDAO defaultSubjectDAO = new DefaultSubjectDAO();
         defaultSubjectDAO.setSessionStorageEvaluator(defaultSessionStorageEvaluator);
         securityManager.setSubjectDAO(defaultSubjectDAO);
-        securityManager.setRealm(userAuthRealm);
         securityManager.setSessionManager(sessionManager());
+
+        // 多realm认证
+        Collection<Realm> realms = new ArrayList<Realm>(2);
+        realms.add(userAuthRealm);
+        realms.add(tokenRealm);
+        securityManager.setRealms(realms);
+
         return securityManager;
     }
 
@@ -140,7 +150,7 @@ public class ShiroConfig {
          *     那么过滤器执行顺序为：authc、cors
 
          */
-
+        filterMap.put("/jwt/login", "jwt");
         filterMap.put("/static/**", "anon");    //公开访问的资源
         filterMap.put("/open/api/**", "anon");  //公开接口地址
         filterMap.put("/logout", "logout");     //配置登出页,shiro已经帮我们实现了跳转
