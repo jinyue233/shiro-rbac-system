@@ -2,12 +2,20 @@ package name.ealen.infrastructure.config;
 
 import name.ealen.domain.dao.PermissionRepository;
 import name.ealen.domain.entity.Permission;
+import name.ealen.infrastructure.filters.CustomFormAuthenticationFilter;
 import name.ealen.infrastructure.filters.SimpleCORSFilter;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
+import org.apache.shiro.mgt.DefaultSessionStorageEvaluator;
+import org.apache.shiro.mgt.DefaultSubjectDAO;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.apache.shiro.web.mgt.DefaultWebSessionStorageEvaluator;
+import org.apache.shiro.web.servlet.SimpleCookie;
+import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
+import org.apache.shiro.web.session.mgt.ServletContainerSessionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import javax.servlet.Filter;
@@ -41,7 +49,8 @@ public class ShiroConfig {
         factoryBean.setUnauthorizedUrl("/unauthorized");//未授权界面
         // 添加自定义过滤器
         Map<String, Filter> filterMap = factoryBean.getFilters();
-        filterMap.put("cors", simpleCORSFilter());
+        filterMap.put("cors", simpleCORSFilter());//
+        filterMap.put("authc", new CustomFormAuthenticationFilter());
         factoryBean.setFilterChainDefinitionMap(setFilterChainDefinitionMap()); //配置 拦截过滤器链
 
         return factoryBean;
@@ -58,9 +67,25 @@ public class ShiroConfig {
     @Bean
     public SecurityManager securityManager() {
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
+        CustomDefaultWebSessionStorageEvaluator defaultSessionStorageEvaluator = new CustomDefaultWebSessionStorageEvaluator();
+        /*DefaultWebSessionStorageEvaluator defaultSessionStorageEvaluator = new DefaultWebSessionStorageEvaluator();*/
+        defaultSessionStorageEvaluator.setSessionStorageEnabled(false);
+        DefaultSubjectDAO defaultSubjectDAO = new DefaultSubjectDAO();
+        defaultSubjectDAO.setSessionStorageEvaluator(defaultSessionStorageEvaluator);
+        securityManager.setSubjectDAO(defaultSubjectDAO);
         securityManager.setRealm(userAuthRealm);
+        securityManager.setSessionManager(sessionManager());
         return securityManager;
     }
+
+    @Bean
+    public SessionManager sessionManager() {
+        DefaultWebSessionManager sessionManager = new DefaultWebSessionManager();
+        sessionManager.setSessionIdCookie(simpleCookie());
+        return sessionManager;
+    }
+
+
 
     /**
      * 开启shiro 注解支持. 使以下注解能够生效 :
@@ -85,14 +110,15 @@ public class ShiroConfig {
         Map<String, String> filterMap = new LinkedHashMap<>();
         //注册 数据库中所有的权限 及其对应url
         List<Permission> allPermission = permissionRepository.findAll();//数据库中查询所有权限
-        for (Permission p : allPermission) {
+        /*for (Permission p : allPermission) {
             filterMap.put(p.getUrl(), "perms[" + p.getName() + "]");    //拦截器中注册所有的权限
-        }
+        }*/
 
         filterMap.put("/static/**", "anon");    //公开访问的资源
         filterMap.put("/open/api/**", "anon");  //公开接口地址
         filterMap.put("/logout", "logout");     //配置登出页,shiro已经帮我们实现了跳转
-        filterMap.put("/**", "authc,cors");          //所有资源都需要经过验证
+        // 如果要禁止创建session，那么需要将noSessionCreation至于其他过滤器之前
+        filterMap.put("/**", "noSessionCreation, authc, cors");          //所有资源都需要经过验证
         return filterMap;
     }
 
@@ -106,4 +132,11 @@ public class ShiroConfig {
         hashedCredentialsMatcher.setHashIterations(1024); //散列的次数，比如散列两次，相当于 md5(md5(""))
         return hashedCredentialsMatcher;
     }
+
+    @Bean
+    public SimpleCookie simpleCookie() {
+        SimpleCookie cookie = new SimpleCookie("customCookidId");
+        return cookie;
+    }
+
 }
