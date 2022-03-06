@@ -114,6 +114,27 @@ public class ShiroConfig {
             filterMap.put(p.getUrl(), "perms[" + p.getName() + "]");    //拦截器中注册所有的权限
         }*/
 
+        /**
+         * 【shiro过滤器路径匹配结论】：
+         * 1，只要一旦匹配到对应路径的过滤器，那么后面配置的符合路径匹配的过滤器会失效不会执行，即执行优先匹配到的过滤器，
+         *    因此不能把路径全匹配的过滤器放到前面（比如filterMap.put("/**", "authc,cors");），否则会屏蔽后面精确
+         *    匹配到的过滤器。
+         *    举个例子：
+         *    如下配置：
+         *    filterMap.put("/**", "authc,cors");
+         *    filterMap.put("/logout", "logout");
+         *    此时一个/logou请求过来，匹配到的是authc,cors，而logpout过滤器被忽略
+         *  2，一个路径匹配到多个shiro过滤器时，如果前面过滤器不返回false，那么这些所有过滤器都会被执行；
+         *     如果前面的某个过滤器返回false，那么其后的过滤器不会执行，此时请求也到达不了controoler的requestMapping方法
+         *     【QUESTION】为什么只要shiro有一个过滤器返回false，就到达不了controoler的requestMapping方法呢？
+         *     【ANSWER】因为只要一个shiro的过滤器返回false，那么就不会再调用shiro的下一个过滤器同时也不会调用servlet后面的过滤器链（Shiro的ProxyFilterChain包装了原始的servlet过滤器链），
+         *              所以此时请求也到达不了controoler的requestMapping方法，详见doFilterInternal的doFilterInternal方法的continueChain属性上下代码。
+         *
+         *  3，如果一个路径匹配到多个shiro过滤器，这些过滤器执行顺序按配置的顺序执行，比如配置是filterMap.put("/**", "authc,cors")，
+         *     那么过滤器执行顺序为：authc、cors
+
+         */
+
         filterMap.put("/static/**", "anon");    //公开访问的资源
         filterMap.put("/open/api/**", "anon");  //公开接口地址
         filterMap.put("/logout", "logout");     //配置登出页,shiro已经帮我们实现了跳转
