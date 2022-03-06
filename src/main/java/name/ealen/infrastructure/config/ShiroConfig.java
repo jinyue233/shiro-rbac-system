@@ -24,7 +24,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
+// saveRequestAndRedirectToLogin作用：当检测到用户没有登录但要访问受限资源时，此时过经过FormAuthenticationFilter、
+// UserFilter或PermissionsAuthorizationFilter等过滤器时，此时会默认创建session，然后将访问受限资源的请求url保存到
+// session中，等用户登录后，然后再调用FormAuthenticationFilter（如用到）的issueSuccessRedirect(request, response)方法取出
+// session保存的原先访问受限资源的url（如果有seesion才会取哈），然后再重定向到受限资源网址。
+// 所以在没有session的无状态认证情况下又要用到FormAuthenticationFilter，此时重写AccessControlFilter的saveRequest方法
+// 使这个saveRequest方法为空逻辑，不创建session即可。类似的如果还用到UserFilter或PermissionsAuthorizationFilter等过滤器时，
+// 一样要重写AccessControlFilter的saveRequest方法，使这个saveRequest方法为空逻辑
 /**
  * Created by EalenXie on 2019/3/25 15:12.
  */
