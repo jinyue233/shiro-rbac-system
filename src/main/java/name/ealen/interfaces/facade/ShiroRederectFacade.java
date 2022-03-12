@@ -67,4 +67,10 @@ public class ShiroRederectFacade {
         cookie.setPath("/");
         response.addCookie(cookie);
     }
+    // 总结：可以通过后端java直接重定向到vue的页面（路由），利用这个可以实现单点登录从查询参数中拿到tickey再去cas认证，成功后返回token给vue前端即可
+    @GetMapping(value = "/open/api/testRedirectToVuePage")
+    public void testRedirectToVuePage(HttpServletRequest request, HttpServletResponse response) throws Exception{
+        System.out.println("redirectTo:http://127.0.0.1:9528/#/recruit/enterprice");
+        WebUtils.issueRedirect(request, response, "http://127.0.0.1:9528/#/recruit/enterprice");
+    }
 }
